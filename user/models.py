@@ -2,7 +2,6 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.contrib.auth.base_user import BaseUserManager
 
 
@@ -57,18 +56,3 @@ class CustomUser(BaseModel,AbstractUser):
     def __str__(self):
         return self.username
 
-
-class WorkingHour(BaseModel):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    weekly_schedule = models.JSONField()
-
-    def clean(self):
-        if self.user.role != CustomUser.Roles.INSTRUCTOR:
-            raise ValidationError("Working hours can only be assigned to instructors.")
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.name}'s Working Hours"

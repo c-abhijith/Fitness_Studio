@@ -5,8 +5,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
 from .models import CustomUser
+from fitness_store.models import WorkingHour
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from common.helper.default_schedule import default_schedule
 
 
 from rest_framework.permissions import AllowAny
@@ -19,16 +21,23 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
 
+    
     def post(self, request):
         try:
             serializer = RegisterSerializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
+
+                if user.role == CustomUser.Roles.INSTRUCTOR:
+                    WorkingHour.objects.create(user=user, weekly_schedule=default_schedule)
+
                 return Response({
                     "message": "User registered successfully",
                     "user": RegisterSerializer(user).data
                 }, status=status.HTTP_201_CREATED)
+
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
