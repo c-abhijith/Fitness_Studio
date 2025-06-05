@@ -9,6 +9,7 @@ def handle_ok(message: str, data: Optional[Any] = None,page: Optional[Any] = Non
     }
     if data is not None:
         response["data"] = data
+    if page is not None:
         response["count"]=int(len(data))
         response["page"]=int(page)
         response["pages"]=paginator.num_pages

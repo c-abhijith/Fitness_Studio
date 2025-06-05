@@ -8,6 +8,7 @@ from user.models import CustomUser
 from common.helper.error_message import *
 from common.helper.success_message import *
 import pytz
+from common.helper.utils import convert_timezone
 from datetime import datetime, timedelta
 from rest_framework.permissions import IsAuthenticated
 
@@ -21,24 +22,48 @@ class FitnessClassListCreateView(APIView):
 
             if user_timezone not in pytz.all_timezones:
                 return handle_Bad_request("Invalid timezone provided.")
-                
+
             classes = FitnessClass.objects.all()
             result = []
 
             for cls in classes:
-                original_dt = datetime.combine(cls.date, cls.time)
-                instructor_tz = pytz.timezone(cls.instructor.timezone)
-                localized_dt = instructor_tz.localize(original_dt)
-                target_tz = pytz.timezone(user_timezone)
-                converted_dt = localized_dt.astimezone(target_tz)
+                if not cls.date or not cls.time:
+                    continue
+
+                instructor_tz_name = getattr(cls.instructor, 'timezone', None)
+
+                if instructor_tz_name and instructor_tz_name in pytz.all_timezones:
+                    converted = convert_timezone(
+                        date_str=cls.date.strftime("%Y-%m-%d"),
+                        time_str=cls.time.strftime("%H:%M:%S"),
+                        duration_minutes=cls.duration,
+                        current_tz_str=instructor_tz_name,
+                        target_tz_str=user_timezone
+                    )
+
+                    date = converted["converted_date"]
+                    start_time = converted["converted_start_time"]
+                    end_time = converted["converted_end_time"]
+                else:
+                    start_dt = datetime.combine(cls.date, cls.time)
+                    end_dt = start_dt + timedelta(minutes=cls.duration)
+
+                    date = cls.date.strftime("%Y-%m-%d")
+                    start_time = cls.time.strftime("%H:%M:%S")
+                    end_time = end_dt.time().strftime("%H:%M:%S")
+
                 serialized = FitnessClassSerializer(cls).data
-                serialized['local_datetime'] = converted_dt.isoformat()
+
+                serialized["date"] = date
+                serialized["start_time"] = start_time
+                serialized["end_time"] = end_time
+
                 result.append(serialized)
-            
+
             return handle_ok("Fitness classes fetched successfully.", result)
 
-        except Exception as Err:
-            return handle_internal_server_error("An unexpected error occurred", Err)
+        except Exception as err:
+            return handle_internal_server_error("An unexpected error occurred", err)
 
     def post(self, request):
         try:

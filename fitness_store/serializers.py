@@ -5,7 +5,7 @@ from django.utils.timezone import now
 class FitnessClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = FitnessClass
-        fields = '__all__'
+        exclude=["deleted_at","updated_at","time"]
 
     def validate_duration(self, value):
         if value <= 0:
