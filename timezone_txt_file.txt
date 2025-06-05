@@ -1,3 +1,7 @@
-Africa/Abidjan
 America/New_York
 Asia/Kolkata
+Asia/Dubai
+
+
+Asia/Colombo
+Europe/Moscow
