@@ -29,9 +29,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         token['id'] = str(user.id)
         token['username'] = user.username
-        token['name'] = user.name
         token['role'] = user.role
         token['timezone'] = user.timezone
-        # token['email'] = user.email
+        token['email'] = user.email
 
         return token

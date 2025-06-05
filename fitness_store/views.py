@@ -5,6 +5,10 @@ from .models import FitnessClass,Booking
 from .serializers import FitnessClassSerializer,BookingSerializer
 from django.shortcuts import get_object_or_404
 import pytz
+from user.models import CustomUser
+from django.utils.timezone import now
+from common.helper.error_message import *
+from common.helper.success_message import *
 from datetime import datetime, timedelta
 from uuid import UUID
 from rest_framework.permissions import IsAuthenticated
@@ -21,10 +25,8 @@ class FitnessClassListCreateView(APIView):
                 user_timezone = getattr(request.user, 'timezone', 'UTC')
 
             if user_timezone not in pytz.all_timezones:
-                return Response(
-                    {"error": "Invalid timezone provided."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return handle_Bad_request("Invalid timezone provided.")
+                
 
             classes = FitnessClass.objects.all()
             result = []
@@ -38,21 +40,18 @@ class FitnessClassListCreateView(APIView):
                 serialized = FitnessClassSerializer(cls).data
                 serialized['local_datetime'] = converted_dt.isoformat()
                 result.append(serialized)
+            
+            return handle_ok("Fitness classes fetched successfully.",result)
 
-            return Response({
-                "message": "Fitness classes fetched successfully.",
-                "data": result
-            })
-
-        except Exception as e:
-            return Response(
-                {"error": f"An unexpected error occurred while fetching classes: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
+        except Exception as Err:
+            return handle_internal_server_error("An unexpected error occurred",Err)
+            
 
     def post(self, request):
         try:
+            if request.user.role != CustomUser.Roles.INSTRUCTOR:
+                return handle_forbidden("Only instructors are allowed to create fitness classes.")
+            
             data = request.data.copy()
             instructor = request.user
             data['instructor'] = str(instructor.id)
@@ -82,26 +81,15 @@ class FitnessClassListCreateView(APIView):
                         )
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Proceed if no conflict
             serializer = FitnessClassSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
-                return Response({
-                    "message": "Fitness class created successfully.",
-                    "data": serializer.data
-                }, status=status.HTTP_201_CREATED)
+                return handle_create("Fitness class")
+            return handle_Bad_request(serializer.errors)
 
-            return Response({
-                "message": "Validation failed.",
-                "errors": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            return Response({
-                "message": "Failed to create class.",
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        except Exception as Err:
+            return handle_internal_server_error("Failed to create class.",Err)
+            
 
 class BookingListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -110,18 +98,17 @@ class BookingListCreateView(APIView):
         try:
             bookings = Booking.objects.filter(user_id=request.user)
             serializer = BookingSerializer(bookings, many=True)
-            return Response({
-                "message": "Bookings fetched successfully.",
-                "data": serializer.data
-            })
-        except Exception as e:
-            return Response(
-                {"error": f"Failed to fetch bookings: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return handle_ok("Bookings fetched successfully.",serializer.data)
+            
+        except Exception as Err:
+            return handle_internal_server_error("Failed to fetch bookings",Err)
+            
 
     def post(self, request):
         try:
+            if request.user.role != CustomUser.Roles.USER:
+                return handle_forbidden("Only USER are allowed to create fitness classes.")
+
             user = request.user
             class_id = request.data.get('fitness_class')
 
@@ -140,7 +127,6 @@ class BookingListCreateView(APIView):
                 exist_start = datetime.combine(existing_class.date, existing_class.time)
                 exist_end = exist_start + timedelta(minutes=existing_class.duration)
 
-                # Overlap logic
                 if (new_start < exist_end and new_end > exist_start):
                     return Response({
                         "message": (
@@ -153,50 +139,48 @@ class BookingListCreateView(APIView):
             serializer = BookingSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save(user_id=user)
-                return Response({
-                    "message": "Booking created successfully.",
-                    "data": serializer.data
-                }, status=status.HTTP_201_CREATED)
+                return handle_create("Booking")
+            return handle_Bad_request(serializer.errors)
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            return Response(
-                {"error": f"Failed to create booking: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
+        except Exception as Err:
+            return handle_internal_server_error("Failed to create booking",Err)
+            
 
 class BookingDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self, booking_id, user):
-        """
-        Helper to get a booking belonging to the user, or return 404
-        """
         return get_object_or_404(Booking, id=booking_id, user_id=user)
 
     def get(self, request, id):
         try:
             booking = self.get_object(id, request.user)
             serializer = BookingSerializer(booking)
-            return Response({
-                "message": "Booking retrieved successfully.",
-                "data": serializer.data
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                "error": f"Failed to retrieve booking: {str(e)}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return handle_ok("Booking retrieved successfully",serializer.data)
+        except Exception as Err:
+            return handle_internal_server_error("Failed to retrieve booking",Err)
+  
 
+    
     def delete(self, request, id):
         try:
+            if request.user.role != CustomUser.Roles.USER:
+                return handle_forbidden("Only USER are allowed to create fitness classes.")
             booking = self.get_object(id, request.user)
+            fitness_class = booking.fitness_class
+
+            class_start = datetime.combine(fitness_class.date, fitness_class.time)
+
+            if class_start - now() < timedelta(hours=12):
+                return handle_Bad_request("You can only delete a booking at least 12 hours before the class starts")
+
+
             booking.delete()
-            return Response({
-                "message": "Booking deleted successfully."
-            }, status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response({
-                "error": f"Failed to delete booking: {str(e)}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return handle_ok("Booking deleted successfully.")
+            
+        except Booking.DoesNotExist:
+            return handle_not_found("Booking not found or already deleted")
+
+        except Exception as Err:
+            return handle_internal_server_error("Failed to delete booking",Err)
+            
