@@ -3,14 +3,15 @@ from .models import CustomUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'name', 'role', 'password')
+        fields = ('id', 'username', 'email', 'name', 'role', 'password', 'timezone')  
         extra_kwargs = {
-            'password': {'write_only': True}  
+            'password': {'write_only': True}
         }
 
     def create(self, validated_data):
@@ -19,6 +20,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+    
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     @classmethod
@@ -29,6 +31,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['name'] = user.name
         token['role'] = user.role
-        token['email'] = user.email
+        token['timezone'] = user.timezone
+        # token['email'] = user.email
 
         return token

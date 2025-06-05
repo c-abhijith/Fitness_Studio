@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
+import pytz
 
 
 
@@ -14,24 +15,30 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+        
 class CustomUserManager(BaseUserManager):
 
+    def validate_required_fields(self, **fields):
+        for field_name, value in fields.items():
+            if not value:
+                raise ValueError(f"The {field_name} must be set")
 
-    def create_user(self,username,name, email, password, **extra_fields):
-        if not username:
-            raise ValueError("The username must be set")
-        if not email:
-            raise ValueError("The email must be set")
-        if not name:
-            raise ValueError("The name must be set")
-        
+    def create_user(self, username, name, email, password, timezone_str, **extra_fields):
+        self.validate_required_fields(
+            username=username,
+            name=name,
+            email=email,
+            timezone=timezone_str
+        )
+
         user = self.model(
             username=username,
             name=name,
             email=email,
+            timezone=timezone_str,
             **extra_fields
         )
-        user.set_password(password)  
+        user.set_password(password)
         user.save()
         return user
 
@@ -45,6 +52,7 @@ class CustomUser(BaseModel,AbstractUser):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.USER)
+    timezone = models.CharField(max_length=50, choices=[(tz, tz) for tz in pytz.common_timezones], default='UTC')
 
 
 

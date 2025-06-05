@@ -2,8 +2,6 @@ from django.db import models
 from user.models import BaseModel,CustomUser
 from django.core.exceptions import ValidationError
 
-# Create your models here.
-
 
 
 class WorkingHour(BaseModel):

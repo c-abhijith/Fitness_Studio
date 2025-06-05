@@ -1,9 +1,9 @@
 # fitness_store/serializers.py
 
 from rest_framework import serializers
-from .models import Trainer
+from .models import WorkingHour
 
-class TrainerScheduleSerializer(serializers.ModelSerializer):
+class WorkingHoureSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Trainer
+        model = WorkingHour
         fields = ['weekly_schedule']

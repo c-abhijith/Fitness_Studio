@@ -1,8 +1,8 @@
 # fitness_store/urls.py
 
 from django.urls import path
-from .views import MyScheduleView
+from .views import WorkingHourList
 
 urlpatterns = [
-    path('workingtime/', TranerScheduleView.as_view(), name='my_schedule'),
+    path('workingtime/', WorkingHourList.as_view(), name='working_hour'),
 ]

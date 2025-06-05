@@ -3,12 +3,12 @@ from .serializers import MyTokenObtainPairSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework import generics
 from .models import CustomUser
 from fitness_store.models import WorkingHour
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from common.helper.default_schedule import default_schedule
+from pytz import all_timezones
 
 
 from rest_framework.permissions import AllowAny
@@ -20,11 +20,32 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
-
-    
     def post(self, request):
         try:
-            serializer = RegisterSerializer(data=request.data)
+            data = request.data.copy()
+            role = data.get("role", CustomUser.Roles.USER)
+            timezone = data.get("timezone")
+
+            # Timezone handling logic
+            if role == CustomUser.Roles.INSTRUCTOR:
+                if not timezone:
+                    data["timezone"] = "Asia/Kolkata"
+            elif role == CustomUser.Roles.USER:
+                if not timezone:
+                    return Response(
+                        {"timezone": "Timezone is required for users."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            tz_value = data.get("timezone")
+            if tz_value not in all_timezones:
+                return Response(
+                    {"timezone": f"{tz_value} is not a valid timezone."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Serializer and user creation
+            serializer = RegisterSerializer(data=data)
             if serializer.is_valid():
                 user = serializer.save()
 
@@ -40,8 +61,6 @@ class RegisterAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-
 
 class LogoutAPIView(APIView):
     permission_classes = (IsAuthenticated,)
