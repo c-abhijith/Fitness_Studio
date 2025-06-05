@@ -2,12 +2,18 @@ from user.models import BaseModel, CustomUser
 from django.db import models
 
 class FitnessClass(BaseModel):
+    COMPONENT_CHOICES = [
+        ('Yoga', 'Yoga'),
+        ('Zumba', 'Zumba'),
+        ('HIIT', 'HIIT'),
+    ]
     name = models.CharField(max_length=255)
     description = models.TextField()
     date = models.DateField()
     time = models.TimeField()
     duration = models.IntegerField(help_text="Duration in minutes")  
     max_members = models.PositiveIntegerField(default=20)
+    type = models.CharField(max_length=10, choices=COMPONENT_CHOICES)
     instructor = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,

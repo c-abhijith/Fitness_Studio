@@ -5,7 +5,8 @@ from .models import FitnessClass,Booking
 from .serializers import FitnessClassSerializer,BookingSerializer
 from django.shortcuts import get_object_or_404
 import pytz
-import datetime
+from datetime import datetime, timedelta
+
 
 
 from uuid import UUID
@@ -17,13 +18,11 @@ class FitnessClassListCreateView(APIView):
 
     def get(self, request):
         try:
-            # Get the timezone from query params or fallback to user's timezone
             user_timezone = request.query_params.get('timezone', None)
 
             if not user_timezone:
                 user_timezone = getattr(request.user, 'timezone', 'UTC')
 
-            # Validate timezone
             if user_timezone not in pytz.all_timezones:
                 return Response(
                     {"error": "Invalid timezone provided."},
@@ -34,18 +33,11 @@ class FitnessClassListCreateView(APIView):
             result = []
 
             for cls in classes:
-                # Combine date and time
                 original_dt = datetime.datetime.combine(cls.date, cls.time)
-
-                # Localize to instructor's timezone
                 instructor_tz = pytz.timezone(cls.instructor.timezone)
                 localized_dt = instructor_tz.localize(original_dt)
-
-                # Convert to target timezone
                 target_tz = pytz.timezone(user_timezone)
                 converted_dt = localized_dt.astimezone(target_tz)
-
-                # Serialize class and inject the converted datetime
                 serialized = FitnessClassSerializer(cls).data
                 serialized['local_datetime'] = converted_dt.isoformat()
                 result.append(serialized)
@@ -65,8 +57,38 @@ class FitnessClassListCreateView(APIView):
     def post(self, request):
         try:
             data = request.data.copy()
-            data['instructor'] = str(request.user.id)  
+            instructor = request.user
+            data['instructor'] = str(instructor.id)
 
+            # Parse input values
+            class_date = data.get('date')
+            class_time = data.get('time')
+            duration = int(data.get('duration'))
+
+            # Convert to datetime objects
+            start_datetime = datetime.strptime(f"{class_date} {class_time}", "%Y-%m-%d %H:%M:%S")
+            end_datetime = start_datetime + timedelta(minutes=duration)
+
+            # Check for overlaps on the same date
+            existing_classes = FitnessClass.objects.filter(
+                instructor=instructor,
+                date=class_date
+            )
+
+            for cls in existing_classes:
+                existing_start = datetime.combine(cls.date, cls.time)
+                existing_end = existing_start + timedelta(minutes=cls.duration)
+
+                if (start_datetime < existing_end and end_datetime > existing_start):
+                    return Response({
+                        "message": (
+                            f"You already have a class '{cls.name}' from "
+                            f"{existing_start.strftime('%I:%M %p')} to {existing_end.strftime('%I:%M %p')}. "
+                            f"You can create a new class only after {existing_end.strftime('%I:%M %p')}."
+                        )
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Proceed if no conflict
             serializer = FitnessClassSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -74,7 +96,7 @@ class FitnessClassListCreateView(APIView):
                     "message": "Fitness class created successfully.",
                     "data": serializer.data
                 }, status=status.HTTP_201_CREATED)
-            
+
             return Response({
                 "message": "Validation failed.",
                 "errors": serializer.errors
@@ -85,7 +107,7 @@ class FitnessClassListCreateView(APIView):
                 "message": "Failed to create class.",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
 
 class BookingListCreateView(APIView):
     permission_classes = [IsAuthenticated]
