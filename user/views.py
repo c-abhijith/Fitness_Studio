@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser
-from fitness_store.models import WorkingHour
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from common.helper.default_schedule import default_schedule
@@ -26,7 +25,6 @@ class RegisterAPIView(APIView):
             role = data.get("role", CustomUser.Roles.USER)
             timezone = data.get("timezone")
 
-            # Timezone handling logic
             if role == CustomUser.Roles.INSTRUCTOR:
                 if not timezone:
                     data["timezone"] = "Asia/Kolkata"
@@ -44,13 +42,9 @@ class RegisterAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Serializer and user creation
             serializer = RegisterSerializer(data=data)
             if serializer.is_valid():
                 user = serializer.save()
-
-                if user.role == CustomUser.Roles.INSTRUCTOR:
-                    WorkingHour.objects.create(user=user, weekly_schedule=default_schedule)
 
                 return Response({
                     "message": "User registered successfully",
