@@ -6,9 +6,6 @@ from .serializers import FitnessClassSerializer,BookingSerializer
 from django.shortcuts import get_object_or_404
 import pytz
 from datetime import datetime, timedelta
-
-
-
 from uuid import UUID
 from rest_framework.permissions import IsAuthenticated
 
@@ -60,16 +57,13 @@ class FitnessClassListCreateView(APIView):
             instructor = request.user
             data['instructor'] = str(instructor.id)
 
-            # Parse input values
             class_date = data.get('date')
             class_time = data.get('time')
             duration = int(data.get('duration'))
 
-            # Convert to datetime objects
             start_datetime = datetime.strptime(f"{class_date} {class_time}", "%Y-%m-%d %H:%M:%S")
             end_datetime = start_datetime + timedelta(minutes=duration)
 
-            # Check for overlaps on the same date
             existing_classes = FitnessClass.objects.filter(
                 instructor=instructor,
                 date=class_date
@@ -128,14 +122,44 @@ class BookingListCreateView(APIView):
 
     def post(self, request):
         try:
+            user = request.user
+            class_id = request.data.get('fitness_class')
+
+            try:
+                new_class = FitnessClass.objects.get(id=class_id)
+            except FitnessClass.DoesNotExist:
+                return Response({"error": "Fitness class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            new_start = datetime.combine(new_class.date, new_class.time)
+            new_end = new_start + timedelta(minutes=new_class.duration)
+
+            existing_bookings = Booking.objects.filter(user_id=user).select_related('fitness_class')
+
+            for booking in existing_bookings:
+                existing_class = booking.fitness_class
+                exist_start = datetime.combine(existing_class.date, existing_class.time)
+                exist_end = exist_start + timedelta(minutes=existing_class.duration)
+
+                # Overlap logic
+                if (new_start < exist_end and new_end > exist_start):
+                    return Response({
+                        "message": (
+                            f"You already have a booking from "
+                            f"{exist_start.strftime('%I:%M %p')} to {exist_end.strftime('%I:%M %p')}. "
+                            "You cannot book another class during this time."
+                        )
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
             serializer = BookingSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save(user_id=request.user)  # user from token
+                serializer.save(user_id=user)
                 return Response({
                     "message": "Booking created successfully.",
                     "data": serializer.data
                 }, status=status.HTTP_201_CREATED)
+
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             return Response(
                 {"error": f"Failed to create booking: {str(e)}"},
