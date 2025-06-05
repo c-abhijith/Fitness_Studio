@@ -17,3 +17,11 @@ class FitnessClass(BaseModel):
 
     def __str__(self):
         return f"{self.name} on {self.date} at {self.time}"
+
+
+class Booking(BaseModel):
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='bookings')
+    fitness_class = models.ForeignKey(FitnessClass, on_delete=models.CASCADE, related_name='bookings')
+
+    def __str__(self):
+        return f"{self.user} booked {self.fitness_class}"

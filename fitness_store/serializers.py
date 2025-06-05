@@ -21,3 +21,11 @@ class FitnessClassSerializer(serializers.ModelSerializer):
         if value < now().date():
             raise serializers.ValidationError("Date cannot be in the past.")
         return value
+
+from rest_framework import serializers
+from .models import Booking
+
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = ['id', 'user_id', 'fitness_class']
