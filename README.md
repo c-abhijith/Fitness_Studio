@@ -30,7 +30,7 @@ This project is a Fitness Studio Booking system designed for two types of users:
 
     python manage.py migrate       
 
-    python manage.py runserver```
+    python manage.py runserver
 
 
 
