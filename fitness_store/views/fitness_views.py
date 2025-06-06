@@ -11,6 +11,8 @@ import pytz
 from common.helper.utils import convert_timezone
 from datetime import datetime, timedelta
 from rest_framework.permissions import IsAuthenticated
+from django.core.paginator import Paginator
+from common.helper.pagination import pagination
 
 
 class FitnessClassListCreateView(APIView):
@@ -18,15 +20,22 @@ class FitnessClassListCreateView(APIView):
 
     def get(self, request):
         try:
+            page = int(request.GET.get('page', 1))
+            limit = int(request.GET.get('limit', 20))
+
             user_timezone = request.query_params.get('timezone') or getattr(request.user, 'timezone', 'UTC')
 
             if user_timezone not in pytz.all_timezones:
                 return handle_Bad_request("Invalid timezone provided.")
 
-            classes = FitnessClass.objects.all()
+            classes = FitnessClass.objects.all().order_by('-id')  # Order if you want latest first
+
+            paginator = Paginator(classes, limit)
+            paginated_classes = pagination(page, paginator)
+
             result = []
 
-            for cls in classes:
+            for cls in paginated_classes:
                 if not cls.date or not cls.time:
                     continue
 
@@ -60,11 +69,10 @@ class FitnessClassListCreateView(APIView):
 
                 result.append(serialized)
 
-            return handle_ok("Fitness classes fetched successfully.", result)
+            return handle_ok("Fitness classes fetched successfully.", result,page,paginator)
 
         except Exception as err:
             return handle_internal_server_error("An unexpected error occurred", err)
-
     def post(self, request):
         try:
             if request.user.role != CustomUser.Roles.INSTRUCTOR:

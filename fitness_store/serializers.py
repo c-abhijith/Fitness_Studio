@@ -26,6 +26,7 @@ from rest_framework import serializers
 from .models import Booking
 
 class BookingSerializer(serializers.ModelSerializer):
+    fitness_class = FitnessClassSerializer()
     class Meta:
         model = Booking
         fields = ['id', 'user_id', 'fitness_class']
