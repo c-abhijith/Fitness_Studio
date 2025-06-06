@@ -12,7 +12,6 @@ class FitnessClass(BaseModel):
     date = models.DateField()
     time = models.TimeField()
     duration = models.IntegerField(help_text="Duration in minutes")  
-    max_members = models.PositiveIntegerField(default=20)
     type = models.CharField(max_length=10, choices=COMPONENT_CHOICES)
     instructor = models.ForeignKey(
         CustomUser,

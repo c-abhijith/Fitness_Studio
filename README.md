@@ -35,9 +35,7 @@ This project is a Fitness Studio Booking system.
 
 ## Docker
     docker-compose --build
-    docker-compose up 
-
-```
+    docker-compose up ```
 ```
 #### About Project
 

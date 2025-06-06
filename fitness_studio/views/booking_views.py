@@ -1,8 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from fitness_store.models import Booking, FitnessClass
-from fitness_store.serializers import BookingSerializer
+from fitness_studio.models import Booking, FitnessClass
+from fitness_studio.serializers import BookingSerializer
 from user.models import CustomUser
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now

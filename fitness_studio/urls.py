@@ -1,6 +1,6 @@
 from django.urls import path
-from fitness_store.views.fitness_views import FitnessClassListCreateView
-from fitness_store.views.booking_views import BookingListCreateView,BookingDetailView
+from fitness_studio.views.fitness_views import FitnessClassListCreateView
+from fitness_studio.views.booking_views import BookingListCreateView,BookingDetailView
 
 urlpatterns = [
     path('classes/', FitnessClassListCreateView.as_view(), name='fitness-class-list-create'),
