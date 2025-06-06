@@ -22,8 +22,6 @@ This project is a Fitness Studio Booking system designed for two types of users:
 ## Setup Instructions
 
 ### windows
-
-    bash
     python -m venv venv 
     venv\Scripts\activate
     pip install -r requirements.txt
@@ -37,14 +35,12 @@ This project is a Fitness Studio Booking system designed for two types of users:
 
 
 ### Macos / Linux
-    bash
     python -m venv venv
     source venv/bin/activate
 
     make run-local```
 
 ## Docker
-    bash
     docker-compose --build
     docker-compose up ```
 
