@@ -47,3 +47,5 @@ This project is a Fitness Studio Booking system designed for two types of users:
 
 
 ```
+
+### password : TheGod@123
