@@ -2,6 +2,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer
 from rest_framework.views import APIView
 from .models import CustomUser
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from pytz import all_timezones
@@ -44,12 +45,14 @@ class RegisterAPIView(APIView):
 
 class LogoutAPIView(APIView):
     permission_classes = (IsAuthenticated,)
+    parser_classes = (JSONParser,)  # ensure JSON parser is used
+
     def post(self, request):
         try:
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
-            token.blacklist()  
-            handle_ok("Logout successful")
-            
-        except Exception as Err:
-            handle_internal_server_error("Error",Err)
+            token.blacklist()
+            return Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
+
+        except Exception as err:
+            return Response({"error": str(err)}, status=status.HTTP_400_BAD_REQUEST)

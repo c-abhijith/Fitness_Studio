@@ -51,3 +51,6 @@ Create a virtual environment and install the dependencies. The SQLite database f
 
 
 ### password : TheGod@123
+
+
+### PostMan link :https://documenter.getpostman.com/view/44984967/2sB2x2LF3b

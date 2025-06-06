@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from .models import FitnessClass, CustomUser
+from .models import FitnessClass, Booking, CustomUser
 from django.utils.timezone import now
+
 
 class FitnessClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = FitnessClass
-        exclude=["deleted_at","updated_at","time"]
+        exclude = ["deleted_at", "updated_at"]
 
     def validate_duration(self, value):
         if value <= 0:
@@ -22,11 +23,15 @@ class FitnessClassSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Date cannot be in the past.")
         return value
 
-from rest_framework import serializers
-from .models import Booking
 
 class BookingSerializer(serializers.ModelSerializer):
-    fitness_class = FitnessClassSerializer()
+    fitness_class = FitnessClassSerializer() 
     class Meta:
         model = Booking
         fields = ['id', 'user_id', 'fitness_class']
+
+class BookingSerializerCreate(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = ['id', 'user_id', 'fitness_class']
+

@@ -23,12 +23,17 @@ class FitnessClassListCreateView(APIView):
             page = int(request.GET.get('page', 1))
             limit = int(request.GET.get('limit', 20))
 
-            user_timezone = request.query_params.get('timezone') or getattr(request.user, 'timezone', 'UTC')
+            user = request.user
+            user_timezone = request.query_params.get('timezone') or getattr(user, 'timezone', 'UTC')
 
             if user_timezone not in pytz.all_timezones:
                 return handle_Bad_request("Invalid timezone provided.")
 
-            classes = FitnessClass.objects.all().order_by('-id')  # Order if you want latest first
+            # Role-based filtering
+            if user.role == CustomUser.Roles.INSTRUCTOR:
+                classes = FitnessClass.objects.filter(instructor=user).order_by('-id')
+            else:
+                classes = FitnessClass.objects.all().order_by('-id')
 
             paginator = Paginator(classes, limit)
             paginated_classes = pagination(page, paginator)
@@ -62,22 +67,22 @@ class FitnessClassListCreateView(APIView):
                     end_time = end_dt.time().strftime("%H:%M:%S")
 
                 serialized = FitnessClassSerializer(cls).data
-
                 serialized["date"] = date
                 serialized["start_time"] = start_time
                 serialized["end_time"] = end_time
 
                 result.append(serialized)
 
-            return handle_ok("Fitness classes fetched successfully.", result,page,paginator)
+            return handle_ok("Fitness classes fetched successfully.", result, page, paginator)
 
         except Exception as err:
             return handle_internal_server_error("An unexpected error occurred", err)
+
     def post(self, request):
         try:
             if request.user.role != CustomUser.Roles.INSTRUCTOR:
                 return handle_forbidden("Only instructors are allowed to create fitness classes.")
-            
+
             data = request.data.copy()
             data['instructor'] = str(request.user.id)
 
@@ -88,11 +93,14 @@ class FitnessClassListCreateView(APIView):
             start_datetime = datetime.strptime(f"{class_date} {class_time}", "%Y-%m-%d %H:%M:%S")
             end_datetime = start_datetime + timedelta(minutes=duration)
 
+            # Check only same instructor's classes for overlap
             existing_classes = FitnessClass.objects.filter(instructor=request.user, date=class_date)
 
             for cls in existing_classes:
                 existing_start = datetime.combine(cls.date, cls.time)
                 existing_end = existing_start + timedelta(minutes=cls.duration)
+
+                # Overlap logic
                 if start_datetime < existing_end and end_datetime > existing_start:
                     return Response({
                         "message": (
@@ -107,5 +115,5 @@ class FitnessClassListCreateView(APIView):
                 return handle_create("Fitness class")
             return handle_Bad_request(serializer.errors)
 
-        except Exception as Err:
-            return handle_internal_server_error("Failed to create class.", Err)
+        except Exception as err:
+            return handle_internal_server_error("Failed to create class.", err)
