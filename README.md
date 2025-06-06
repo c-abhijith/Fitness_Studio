@@ -38,6 +38,7 @@ This project is a Fitness Studio Booking system.
     docker-compose up 
 
 ```
+afsdfasd
 #### About Project
 
 Create a virtual environment and install the dependencies. The SQLite database for this project is saved locally in the project directory, and the database password is TheGod@123. Permissions are set up to manage different user roles effectively.
