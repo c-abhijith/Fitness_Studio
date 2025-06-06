@@ -12,7 +12,7 @@ This project is a Fitness Studio Booking system.
 ## Setup Instructions
 
 ### windows
-    ```bash
+    ```
 
     
     python -m venv venv 
