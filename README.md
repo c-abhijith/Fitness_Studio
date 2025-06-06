@@ -38,11 +38,11 @@ This project is a Fitness Studio Booking system designed for two types of users:
     python -m venv venv
     source venv/bin/activate
 
-    make run-local```
+    make run-local
 
 ## Docker
     docker-compose --build
-    docker-compose up ```
+    docker-compose up 
 
 
 
