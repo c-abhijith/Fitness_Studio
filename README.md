@@ -12,7 +12,8 @@ This project is a Fitness Studio Booking system.
 ## Setup Instructions
 
 ### windows
-    python -m venv venv
+    ```bash
+    python -m venv venv 
     venv\Scripts\activate
     pip install -r requirements.txt
 
@@ -33,7 +34,8 @@ This project is a Fitness Studio Booking system.
 
 
 ## Docker
-    docker-compose up --build
+    docker-compose --build
+    docker
 
 
 
