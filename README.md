@@ -11,9 +11,32 @@ This project is a Fitness Studio Booking system.
 
 ## Setup Instructions
 
-### Python Virtual Environment Setup
+### windows
+    python -m venv venv
+    venv\Scripts\activate
+    pip install -r requirements.txt
+
+    python manage.py makemigrations --> no need to do, already done
+
+    python manage.py migrate        --> no need to do , already done
+
+    python manage.py runserver
+
+
+
+
+### Macos / Linux
+    python -m venv venv
+    source venv/bin/activate
+
+    make run-local
+
+
+## Docker
+    docker-compose up --build
+
+
 
 Create a virtual environment:
 
-```bash
-python -m venv venv
+
