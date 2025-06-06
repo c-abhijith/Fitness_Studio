@@ -13,6 +13,8 @@ This project is a Fitness Studio Booking system.
 
 ### windows
     ```bash
+
+    
     python -m venv venv 
     venv\Scripts\activate
     pip install -r requirements.txt
@@ -21,22 +23,22 @@ This project is a Fitness Studio Booking system.
 
     python manage.py migrate        --> no need to do , already done
 
-    python manage.py runserver
-
+    python manage.py runserver```
 
 
 
 ### Macos / Linux
+```
     python -m venv venv
     source venv/bin/activate
 
-    make run-local
-
+    make run-local```
 
 ## Docker
+```
     docker-compose --build
     docker-compose up ```
-```
+``` 
 #### About Project
 
 Create a virtual environment and install the dependencies. The SQLite database for this project is saved locally in the project directory, and the database password is TheGod@123. Permissions are set up to manage different user roles effectively.
